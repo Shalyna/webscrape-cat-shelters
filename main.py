@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import time
+import grp
 
 def get_cats():
 
@@ -19,34 +20,79 @@ def get_cats():
     monica_results = monica_soup.find_all("div", class_ = "gridResult")
     pet_results = pet_soup.find_all("a", class_ = "relative")
 
-    for cat4 in pet_results:
-        name = cat4.find("p", class_ = "font-bold").text.strip()
-        info = cat4["href"]
-        pet_shelter = requests.get(info).text
-        pet_shelter_soup = BeautifulSoup(pet_shelter, "lxml")
-        pet_shelter_results = pet_shelter_soup.find("span", class_ = "link-content-kin-teal-2")
-        shelter = pet_shelter_results.text
-        print(f"{shelter}:\nCat: {name}\nMore Info: {info}\n")
 
     for cat1 in animal_results:
         name = cat1.find("div", class_ = "pet-results__pet-name").text
         info = "https://www.laanimalservices.com" + cat1["href"]
         shelter = "LA Animal Services"
-        print(f"{shelter}:\nCat: {name}\nMore Info: {info}\n")
+        more_info = requests.get(info).text
+        more_info_soup = BeautifulSoup(more_info, "lxml")
+        more_info_results = more_info_soup.find_all("div", class_ = "pet-details__card-value")
+        for more in more_info_results:
+            more = more.text.strip()
+            if "Kitten" in more:
+                age = more[8:-1]
+            elif "Young Adult" in more:
+                age = more[13:-1]
+            elif "Adult" in more:
+                age = more[7:-1]
+            elif "Middle" in more:
+                age = more[13:-1]
+            elif "Senior" in more:
+                age = more[12:-1]
+            elif "Geriatric" in more:
+                age = more[11:-1]
+            
+            if "Male" in more:
+                sex = more
+            elif "Female" in more:
+                sex = more
+            elif "Unknown" in more:
+                sex = "Unknown"
+
+        print(f"{shelter}:\nCat: {name}\nSex: {sex}\nAge: {age}\nMore more: {info}\n")
 
     for cat2 in friends_results:
         name = cat2.find("span").text
-        info = "https://www.bestfriends.org" + cat2.a["href"]
+        info= "https://www.bestfriends.org" + cat2.a["href"]
         shelter = "Best Friends"
-        print(f"{shelter}:\nCat: {name}\nMore Info: {info}\n")
+        more_info = requests.get(info).text
+        more_info_soup = BeautifulSoup(more_info, "lxml")
+        more_info_results = more_info_soup.find_all("div", class_ = "col-right")
+        for more in more_info_results:
+            age = more.find("time").text
+            more = more.text.strip()
+            if "Female" in more:
+                sex = "Female" 
+            elif "Male" in more:
+                sex = "Male"
+            elif "Unknown" in more:
+                sex = "Unknown"
+
+        print(f"{shelter}:\nCat: {name}\nSex: {sex}\nAge: {age}\nMore more: {info}\n")
 
     for cat3 in monica_results:
-        name = cat3.find("div", class_ = "gridText").text
+        shelter = "Santa Monica Pet Harbor"
+        cat3 = cat3.find_all("div", class_ = "gridText")
+        name = cat3[0].text
         name, number = name.split(" ")
         number = number[1:-2]
         info = "https://petharbor.com/pet.asp?uaid=SNMN." + number
-        shelter = "Santa Monica Pet Harbor"
-        print(f"{shelter}:\nCat: {name}\nMore Info: {info}\n")
+        sex = cat3[1].text
+        age = cat3[4].text
+
+        print(f"{shelter}:\nCat: {name}\nSex: {sex}\nAge: {age}\nMore info: {info}\n")
+    
+    for cat4 in pet_results:
+        name = cat4.find("p", class_ = "font-bold").text.strip()
+        info = cat4["href"]
+        sex, age = cat4.find("div", class_ = "sex-age").text.strip().split(",")
+        age = age.lstrip()
+        pet_shelter = requests.get(info).text
+        pet_shelter_soup = BeautifulSoup(pet_shelter, "lxml")
+        pet_shelter_results = pet_shelter_soup.find("span", class_ = "link-content-kin-teal-2").text
+        shelter = pet_shelter_results
+        print(f"{shelter}:\nCat: {name}\nSex: {sex}\nAge: {age}\nMore info: {info}\n")
 
 
 if __name__ == "__main__":
